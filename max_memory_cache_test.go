@@ -144,7 +144,7 @@ func TestMaxMemoryCache_Get(t *testing.T) {
 				return res
 			},
 			key:       "k4",
-			wantError: errNotFound,
+			wantError: errKeyNotFound,
 		},
 		{
 			name: "exist",
@@ -263,9 +263,10 @@ func TestMaxMemoryCache_LoadAndDelete(t *testing.T) {
 				res.keys = list.NewLinkedListOf[string]([]string{"k1", "k2", "k3"})
 				return res
 			},
-			key:      "k4",
-			wantUsed: 6,
-			wantKeys: []string{"k1", "k2", "k3"},
+			key:       "k4",
+			wantUsed:  6,
+			wantKeys:  []string{"k1", "k2", "k3"},
+			wantError: errKeyNotFound,
 		},
 		{
 			name: "deleted",
@@ -332,10 +333,11 @@ func (m *mockCache) Delete(ctx context.Context, key string) error {
 
 func (m *mockCache) LoadAndDelete(ctx context.Context, key string) ([]byte, error) {
 	val, ok := m.data[key]
-	if ok {
-		delete(m.data, key)
-		m.fn(key, val)
+	if !ok {
+		return nil, errKeyNotFound
 	}
+	delete(m.data, key)
+	m.fn(key, val)
 	return val, nil
 }
 
