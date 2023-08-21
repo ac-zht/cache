@@ -1,4 +1,4 @@
-module cache
+module github.com/zht-account/cache
 
 go 1.18
 

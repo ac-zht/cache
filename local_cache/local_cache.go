@@ -1,8 +1,9 @@
-package cache
+package local_cache
 
 import (
 	"context"
 	"fmt"
+	"github.com/zht-account/cache"
 	"sync"
 	"time"
 )
@@ -10,11 +11,11 @@ import (
 type BuildInMapCacheOption func(cache *BuildInMapCache)
 
 type BuildInMapCache struct {
-	data        map[string]*item
+	Data        map[string]*item
 	outInterval time.Duration
-	mutex       *sync.RWMutex
+	Mutex       *sync.RWMutex
 	close       chan struct{}
-	onEvicted   func(key string, val any)
+	OnEvicted   func(key string, val any)
 }
 
 type item struct {
@@ -28,11 +29,11 @@ func (i *item) deadlineBefore(time time.Time) bool {
 
 func NewBuildInMapCache(cap int, opts ...BuildInMapCacheOption) *BuildInMapCache {
 	cache := &BuildInMapCache{
-		data:        make(map[string]*item, cap),
+		Data:        make(map[string]*item, cap),
 		outInterval: time.Hour,
-		mutex:       &sync.RWMutex{},
+		Mutex:       &sync.RWMutex{},
 		close:       make(chan struct{}),
-		onEvicted:   func(key string, val any) {},
+		OnEvicted:   func(key string, val any) {},
 	}
 	for _, opt := range opts {
 		opt(cache)
@@ -43,9 +44,9 @@ func NewBuildInMapCache(cap int, opts ...BuildInMapCacheOption) *BuildInMapCache
 		for {
 			select {
 			case <-ticker.C:
-				cache.mutex.Lock()
+				cache.Mutex.Lock()
 				cnt := 0
-				for key, res := range cache.data {
+				for key, res := range cache.Data {
 					if cnt > 1000 {
 						break
 					}
@@ -54,7 +55,7 @@ func NewBuildInMapCache(cap int, opts ...BuildInMapCacheOption) *BuildInMapCache
 					}
 					cnt++
 				}
-				cache.mutex.Unlock()
+				cache.Mutex.Unlock()
 
 			case <-cache.close:
 				return
@@ -72,7 +73,7 @@ func BuildInMapCacheWithOutInterval(interval time.Duration) BuildInMapCacheOptio
 
 func BuildInMapCacheWithEvictedCallback(fn func(key string, val any)) BuildInMapCacheOption {
 	return func(cache *BuildInMapCache) {
-		cache.onEvicted = fn
+		cache.OnEvicted = fn
 	}
 }
 
@@ -81,7 +82,7 @@ func (c *BuildInMapCache) Set(ctx context.Context, key string, val any, expirati
 	if expiration > 0 {
 		dl = time.Now().Add(expiration)
 	}
-	c.data[key] = &item{
+	c.Data[key] = &item{
 		val:      val,
 		deadline: dl,
 	}
@@ -89,50 +90,50 @@ func (c *BuildInMapCache) Set(ctx context.Context, key string, val any, expirati
 }
 
 func (c *BuildInMapCache) Get(ctx context.Context, key string) (any, error) {
-	c.mutex.RLock()
-	res, ok := c.data[key]
-	c.mutex.RUnlock()
+	c.Mutex.RLock()
+	res, ok := c.Data[key]
+	c.Mutex.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("%w, key: %s", errKeyNotFound, key)
+		return nil, fmt.Errorf("%w, key: %s", cache.ErrKeyNotFound, key)
 	}
 	if res.deadlineBefore(time.Now()) {
-		c.mutex.Lock()
-		defer c.mutex.Unlock()
-		res, ok = c.data[key]
+		c.Mutex.Lock()
+		defer c.Mutex.Unlock()
+		res, ok = c.Data[key]
 		if !ok {
-			return nil, fmt.Errorf("%w, key: %s", errKeyNotFound, key)
+			return nil, fmt.Errorf("%w, key: %s", cache.ErrKeyNotFound, key)
 		}
 		if res.deadlineBefore(time.Now()) {
 			c.delete(key)
-			return nil, fmt.Errorf("%w, key: %s", errKeyNotFound, key)
+			return nil, fmt.Errorf("%w, key: %s", cache.ErrKeyNotFound, key)
 		}
 	}
 	return res.val, nil
 }
 
 func (c *BuildInMapCache) LoadAndDelete(ctx context.Context, key string) (any, error) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-	res, ok := c.data[key]
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
+	res, ok := c.Data[key]
 	if !ok {
-		return nil, fmt.Errorf("%w, key: %s", errKeyNotFound, key)
+		return nil, fmt.Errorf("%w, key: %s", cache.ErrKeyNotFound, key)
 	}
 	c.delete(key)
 	return res.val, nil
 }
 
 func (c *BuildInMapCache) Delete(ctx context.Context, key string) error {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.Mutex.Lock()
+	defer c.Mutex.Unlock()
 	c.delete(key)
 	return nil
 }
 
 func (c *BuildInMapCache) delete(key string) {
-	val, ok := c.data[key]
+	val, ok := c.Data[key]
 	if !ok {
 		return
 	}
-	delete(c.data, key)
-	c.onEvicted(key, val)
+	delete(c.Data, key)
+	c.OnEvicted(key, val)
 }

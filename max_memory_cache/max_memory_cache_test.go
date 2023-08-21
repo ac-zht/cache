@@ -1,9 +1,10 @@
-package cache
+package max_memory_cache
 
 import (
 	"context"
 	"errors"
 	"github.com/stretchr/testify/assert"
+	"github.com/zht-account/cache"
 	"github.com/zht-account/gotools/list"
 	"testing"
 	"time"
@@ -144,7 +145,7 @@ func TestMaxMemoryCache_Get(t *testing.T) {
 				return res
 			},
 			key:       "k4",
-			wantError: errKeyNotFound,
+			wantError: cache.ErrKeyNotFound,
 		},
 		{
 			name: "exist",
@@ -266,7 +267,7 @@ func TestMaxMemoryCache_LoadAndDelete(t *testing.T) {
 			key:       "k4",
 			wantUsed:  6,
 			wantKeys:  []string{"k1", "k2", "k3"},
-			wantError: errKeyNotFound,
+			wantError: cache.ErrKeyNotFound,
 		},
 		{
 			name: "deleted",
@@ -304,7 +305,7 @@ func TestMaxMemoryCache_LoadAndDelete(t *testing.T) {
 }
 
 type mockCache struct {
-	Cache
+	cache.Cache
 	data map[string][]byte
 	fn   func(key string, val []byte)
 }
@@ -334,7 +335,7 @@ func (m *mockCache) Delete(ctx context.Context, key string) error {
 func (m *mockCache) LoadAndDelete(ctx context.Context, key string) ([]byte, error) {
 	val, ok := m.data[key]
 	if !ok {
-		return nil, errKeyNotFound
+		return nil, cache.ErrKeyNotFound
 	}
 	delete(m.data, key)
 	m.fn(key, val)

@@ -1,10 +1,11 @@
-package cache
+package local_cache
 
 import (
 	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zht-account/cache"
 	"testing"
 	"time"
 )
@@ -33,7 +34,7 @@ func TestBuildInMapCache_Get(t *testing.T) {
 				return NewBuildInMapCache(10)
 			},
 			key:       "key",
-			wantError: fmt.Errorf("%w, key: %s", errKeyNotFound, "key"),
+			wantError: fmt.Errorf("%w, key: %s", cache.ErrKeyNotFound, "key"),
 		},
 		{
 			name: "expired",
@@ -43,7 +44,7 @@ func TestBuildInMapCache_Get(t *testing.T) {
 				return res
 			},
 			key:       "key",
-			wantError: fmt.Errorf("%w, key: %s", errKeyNotFound, "key"),
+			wantError: fmt.Errorf("%w, key: %s", cache.ErrKeyNotFound, "key"),
 		},
 	}
 	for _, tc := range testCase {
@@ -69,7 +70,7 @@ func TestBuildInMapCache_IntervalEliminate(t *testing.T) {
 	err = cache.Set(context.Background(), "k3", "v3", time.Second*3)
 	assert.NoError(t, err)
 	time.Sleep(time.Second * 4)
-	_, ok := cache.data["k3"]
+	_, ok := cache.Data["k3"]
 	require.False(t, ok)
 	require.Equal(t, 3, cnt)
 }

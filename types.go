@@ -2,7 +2,12 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"time"
+)
+
+var (
+	ErrKeyNotFound = errors.New("cache: key not exist")
 )
 
 type Cache interface {
