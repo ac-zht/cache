@@ -1,23 +1,24 @@
-package cache
+package max_cnt_cache
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/zht-account/cache/local_cache"
 	"time"
 )
 
 var errKeyExceedMaxCnt = errors.New("cache: key exceed max cnt")
 
 type MaxCntCache struct {
-	*BuildInMapCache
+	*local_cache.BuildInMapCache
 	max int
 	cnt int
 }
 
 type MaxCntCacheOption func(cache *MaxCntCache)
 
-func NewMaxCntCache(max int, cache *BuildInMapCache, opts ...MaxCntCacheOption) *MaxCntCache {
+func NewMaxCntCache(max int, cache *local_cache.BuildInMapCache, opts ...MaxCntCacheOption) *MaxCntCache {
 	res := &MaxCntCache{
 		BuildInMapCache: cache,
 		max:             max,
@@ -29,9 +30,9 @@ func NewMaxCntCache(max int, cache *BuildInMapCache, opts ...MaxCntCacheOption) 
 }
 
 func (m *MaxCntCache) Set(ctx context.Context, key string, val any, expiration time.Duration) error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	_, ok := m.data[key]
+	m.Mutex.Lock()
+	defer m.Mutex.Unlock()
+	_, ok := m.Data[key]
 	if !ok {
 		if m.cnt+1 > m.max {
 			return fmt.Errorf("%w, key : %s", errKeyExceedMaxCnt, key)
@@ -43,7 +44,7 @@ func (m *MaxCntCache) Set(ctx context.Context, key string, val any, expiration t
 
 func MaxCntCacheWithEvictedCallback() MaxCntCacheOption {
 	return func(cache *MaxCntCache) {
-		cache.onEvicted = func(key string, val any) {
+		cache.OnEvicted = func(key string, val any) {
 			cache.cnt--
 		}
 	}

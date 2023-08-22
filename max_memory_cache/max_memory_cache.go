@@ -1,19 +1,15 @@
-package cache
+package max_memory_cache
 
 import (
 	"context"
-	"errors"
+	"github.com/zht-account/cache"
 	"github.com/zht-account/gotools/list"
 	"sync"
 	"time"
 )
 
-var (
-	errKeyNotFound = errors.New("cache: key not exist")
-)
-
 type MaxMemoryCache struct {
-	Cache
+	cache.Cache
 	max  int64
 	used int64
 
@@ -21,7 +17,7 @@ type MaxMemoryCache struct {
 	mutex *sync.Mutex
 }
 
-func NewMaxMemoryCache(max int64, cache Cache) *MaxMemoryCache {
+func NewMaxMemoryCache(max int64, cache cache.Cache) *MaxMemoryCache {
 	res := &MaxMemoryCache{
 		Cache: cache,
 		max:   max,
@@ -64,7 +60,7 @@ func (m *MaxMemoryCache) Get(ctx context.Context, key string) ([]byte, error) {
 		_ = m.keys.Append(key)
 		return val, nil
 	}
-	return val, errKeyNotFound
+	return val, cache.ErrKeyNotFound
 }
 
 func (m *MaxMemoryCache) Delete(ctx context.Context, key string) error {
