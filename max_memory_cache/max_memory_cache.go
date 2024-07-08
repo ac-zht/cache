@@ -2,8 +2,8 @@ package max_memory_cache
 
 import (
 	"context"
-	"github.com/zht-account/cache"
-	"github.com/zht-account/gotools/list"
+	"github.com/ac-zht/cache"
+	"github.com/ac-zht/gotools/list"
 	"sync"
 	"time"
 )

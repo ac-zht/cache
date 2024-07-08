@@ -3,9 +3,9 @@ package max_memory_cache
 import (
 	"context"
 	"errors"
+	"github.com/ac-zht/cache"
+	"github.com/ac-zht/gotools/list"
 	"github.com/stretchr/testify/assert"
-	"github.com/zht-account/cache"
-	"github.com/zht-account/gotools/list"
 	"testing"
 	"time"
 )

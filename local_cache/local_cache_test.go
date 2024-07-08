@@ -3,9 +3,9 @@ package local_cache
 import (
 	"context"
 	"fmt"
+	"github.com/ac-zht/cache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/zht-account/cache"
 	"testing"
 	"time"
 )
